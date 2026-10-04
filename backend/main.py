@@ -90,6 +90,19 @@ def extract_jargon_and_quiz(transcript: str) -> dict:
 Return a JSON object with two keys:
 - "jargon": a list of objects, each with "term", "definition", "example"
 - "quiz": a list of objects, each with "question", "options" (list of 4 strings), "correctIndex" (0-3), "term"
+
+Follow these steps in order:
+1. First, identify ALL relevant workplace/corporate jargon terms used in the transcript and put them in the "jargon" array.
+2. Then, for EVERY object in the "jargon" array, create exactly ONE quiz question in the "quiz" array.
+
+Quiz rules:
+- The number of quiz questions must exactly equal the number of objects in the "jargon" array. Do not use a fixed number of questions.
+- Every quiz question's "term" must exactly match (same spelling and capitalization) the "term" of one object in the "jargon" array.
+- There must be exactly one quiz question per term. Do not omit any jargon term, and do not repeat a term.
+- Do not create quiz questions for terms that are not in the "jargon" array.
+- Each question must test that term's meaning or appropriate workplace usage.
+- Each question must have exactly 4 options and a "correctIndex" from 0 to 3.
+- If there are 0 jargon terms, return an empty "quiz" array.
 """
 
     for attempt in range(4):
