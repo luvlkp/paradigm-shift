@@ -1,13 +1,16 @@
-import azure.functions as func
+import logging
+
+from fastapi import APIRouter, Request
 
 from db import queries
 from http_utils import error, get_current_user, json_response
 
-bp = func.Blueprint()
+router = APIRouter()
 
-@bp.route("meetings/start", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
-def start(req: func.HttpRequest) -> func.HttpResponse:
-    user = get_current_user(req)
+
+@router.post("/meetings/start")
+def start(request: Request):
+    user = get_current_user(request)
     if not user:
         return error("Token is missing or invalid", 401)
     try:

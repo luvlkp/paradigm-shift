@@ -1,15 +1,23 @@
 import asyncio
-import os
 import json
+import logging
+import os
 import tempfile
 import threading
 import time
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import azure.cognitiveservices.speech as speechsdk
 from google import genai
 from google.genai.errors import APIError
+
+from routes.auth import router as auth_router
+from routes.jargon import router as jargon_router
+from routes.leaderboard import router as leaderboard_router
+from routes.meetings import router as meetings_router
+from db import queries
+from http_utils import get_current_user
 
 load_dotenv()
 
@@ -23,6 +31,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(auth_router)
+app.include_router(jargon_router)
+app.include_router(leaderboard_router)
+app.include_router(meetings_router)
 
 SPEECH_KEY = os.environ["AZURE_SPEECH_KEY"]
 SPEECH_REGION = os.environ["AZURE_SPEECH_REGION"]
@@ -97,7 +110,7 @@ Return a JSON object with two keys:
 
 
 @app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
+async def analyze(request: Request, file: UploadFile = File(...)):
     suffix = os.path.splitext(file.filename)[1] or ".wav"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(await file.read())
@@ -117,6 +130,27 @@ async def analyze(file: UploadFile = File(...)):
         raise HTTPException(status_code=422, detail="No speech detected")
 
     result = extract_jargon_and_quiz(transcript)
+
+    # Persist jargon only when the caller provides a valid Bearer token
+    # (optional: requests without one behave exactly as before).
+    user = get_current_user(request)
+    if user:
+        try:
+            await asyncio.to_thread(
+                queries.insert_list_of_jargon,
+                [
+                    {
+                        "term": item["term"],
+                        "meaning": item["definition"],
+                        "example": item.get("example"),
+                    }
+                    for item in result.get("jargon", [])
+                ],
+                user["company_id"],
+            )
+        except Exception:
+            logging.exception("Failed to save jargon")
+
     return {
         "transcript": transcript,
         "jargon": result.get("jargon", []),

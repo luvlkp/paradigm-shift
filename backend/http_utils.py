@@ -1,15 +1,15 @@
 import json
 
-import azure.functions as func
+from fastapi import Request, Response
 
 from db import queries
 
 
 def json_response(data, status=200):
-    return func.HttpResponse(
-        json.dumps(data, default=str),
+    return Response(
+        content=json.dumps(data, default=str),
         status_code=status,
-        mimetype="application/json",
+        media_type="application/json",
     )
 
 
@@ -17,7 +17,7 @@ def error(message, status):
     return json_response({"error": message}, status)
 
 
-def get_current_user(req):
+def get_current_user(req: Request):
     """Return the user for 'Authorization: Bearer <token>', or None."""
     header = req.headers.get("Authorization", "").strip()
     if not header.lower().startswith("bearer "):

@@ -1,16 +1,17 @@
 import secrets
 
-import azure.functions as func
+from fastapi import APIRouter, Request
 
 from db import queries
 from http_utils import error, json_response
 
-bp = func.Blueprint()
+router = APIRouter()
 
-@bp.route(route="auth/join", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
-def join(req: func.HttpRequest) -> func.HttpResponse:
+
+@router.post("/auth/join")
+async def join(request: Request):
     try:
-        body = req.get_json
+        body = await request.json()
     except ValueError:
         return error("Request body must be JSON", 400)
 

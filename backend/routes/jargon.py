@@ -1,14 +1,14 @@
-import azure.functions as func
+from fastapi import APIRouter, Request
 
 from db import queries
 from http_utils import error, get_current_user, json_response
 
-bp = func.Blueprint()
+router = APIRouter()
 
 
-@bp.route(route="jargon", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
-def list_jargon(req: func.HttpRequest) -> func.HttpResponse:
-    user = get_current_user(req)
+@router.get("/jargon")
+def list_jargon(request: Request):
+    user = get_current_user(request)
     if not user:
         return error("Invalid or missing token", 401)
 

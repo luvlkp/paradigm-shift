@@ -100,18 +100,21 @@ def create_company(name, join_code):
     )
 
 def insert_list_of_jargon(jargon_list, company_id):
+    # jargon_list: list of {"term", "meaning", "example"} dicts (example may be None)
     debug_log = []
-    for jargon, meaning in jargon_list.items():
+    for jargon in jargon_list:
+        term = jargon["term"].strip()
         debug_log.append(_insert_and_return_id(
             """MERGE INTO jargon AS target 
-            USING (VALUES (?, ?, ?)) AS source (company_id, term, meaning)
-            ON (target.company_id = source.company_id AND target.term = source.term)
+            USING (VALUES (?, ?, ?, ?, ?)) AS source (company_id, term, term_normalized, meaning, example_sentence)
+            ON (target.company_id = source.company_id AND target.term_normalized = source.term_normalized)
             WHEN MATCHED THEN
-                UPDATE SET target.meaning = source.meaning
+                UPDATE SET target.meaning = source.meaning,
+                           target.example_sentence = COALESCE(source.example_sentence, target.example_sentence)
             WHEN NOT MATCHED THEN
-                INSERT (company_id, term, meaning)
-                VALUES (source.company_id, source.term, source.meaning)
+                INSERT (company_id, term, term_normalized, meaning, example_sentence)
+                VALUES (source.company_id, source.term, source.term_normalized, source.meaning, source.example_sentence)
             OUTPUT INSERTED.id""",
-            (company_id, jargon, meaning),
+            (company_id, term, term.lower(), jargon["meaning"], jargon.get("example")),
         ))
     return debug_log
