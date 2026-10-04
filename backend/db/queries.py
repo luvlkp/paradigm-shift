@@ -114,7 +114,7 @@ def insert_list_of_jargon(jargon_list, company_id):
             WHEN NOT MATCHED THEN
                 INSERT (company_id, term, term_normalized, meaning, example_sentence)
                 VALUES (source.company_id, source.term, source.term_normalized, source.meaning, source.example_sentence)
-            OUTPUT INSERTED.id""",
+            OUTPUT INSERTED.id;""",
             (company_id, term, term.lower(), jargon["meaning"], jargon.get("example")),
         ))
     return debug_log

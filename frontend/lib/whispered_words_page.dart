@@ -7,7 +7,9 @@ import 'package:http/http.dart' as http;
 import 'theme.dart';
 
 class WhisperedWordsPage extends StatefulWidget {
-  const WhisperedWordsPage({super.key});
+  const WhisperedWordsPage({super.key, this.onResult});
+
+  final void Function(Map<String, dynamic>)? onResult;
 
   @override
   State<WhisperedWordsPage> createState() => _WhisperedWordsPageState();
@@ -21,6 +23,30 @@ class _WhisperedWordsPageState extends State<WhisperedWordsPage> {
 
   static const String _apiBaseUrl = 'http://localhost:8000';
 
+  static String? _authToken;
+
+  Future<void> _ensureAuthToken() async {
+    if (_authToken != null) return;
+
+    final response = await http.post(
+      Uri.parse('$_apiBaseUrl/auth/join'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'display_name': 'Demo User',
+        'join_code': 'DEMO123',
+      }),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+        'Auth failed ${response.statusCode}: ${response.body}',
+      );
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    _authToken = data['token'] as String;
+  }
+
   Future<void> _pickAudioFile() async {
     final file = await FilePicker.pickFile(type: FileType.any);
     if (file == null) return;
@@ -33,10 +59,15 @@ class _WhisperedWordsPageState extends State<WhisperedWordsPage> {
     });
 
     try {
+      await _ensureAuthToken();
+
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('$_apiBaseUrl/analyze'),
       );
+      if (_authToken != null) {
+        request.headers['Authorization'] = 'Bearer $_authToken';
+      }
       if (kIsWeb || file.path == null) {
         final bytes = await file.readAsBytes();
         request.files.add(http.MultipartFile.fromBytes(
@@ -68,6 +99,7 @@ class _WhisperedWordsPageState extends State<WhisperedWordsPage> {
       setState(() {
         _result = jsonDecode(response.body) as Map<String, dynamic>;
       });
+      widget.onResult?.call(_result!);
     } on http.ClientException catch (e) {
       setState(() {
         _errorMessage =
@@ -88,6 +120,7 @@ class _WhisperedWordsPageState extends State<WhisperedWordsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final jargon = (_result?['jargon'] as List?) ?? const [];
     return GroveBackground(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -133,9 +166,61 @@ class _WhisperedWordsPageState extends State<WhisperedWordsPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                '${(_result!['jargon'] as List).length} jargon terms, '
+                '${jargon.length} jargon terms, '
                 '${(_result!['quiz'] as List).length} quiz questions',
               ),
+              if (jargon.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'Jargon from this meeting',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(maxWidth: 420, maxHeight: 260),
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final item in jargon.whereType<Map>())
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (item['term'] != null)
+                                  Text(
+                                    '${item['term']}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: GroveColors.forestGreen,
+                                      fontFamily: 'Georgia',
+                                    ),
+                                  ),
+                                if (item['definition'] != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text('${item['definition']}'),
+                                ],
+                                if (item['example'] != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '“${item['example']}”',
+                                    style: const TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      color: GroveColors.woodBrown,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ],
         ),

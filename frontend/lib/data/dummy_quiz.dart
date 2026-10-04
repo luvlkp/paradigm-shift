@@ -10,6 +10,15 @@ class QuizQuestion {
     required this.correctIndex,
     required this.term,
   });
+
+  factory QuizQuestion.fromJson(Map<String, dynamic> json) {
+    return QuizQuestion(
+      question: json['question'] as String,
+      options: (json['options'] as List).map((e) => e.toString()).toList(),
+      correctIndex: json['correctIndex'] as int,
+      term: json['term'] as String,
+    );
+  }
 }
 
 const List<QuizQuestion> dummyQuiz = [

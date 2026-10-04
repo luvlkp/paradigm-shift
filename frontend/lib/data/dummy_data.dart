@@ -11,6 +11,15 @@ class JargonTerm {
     required this.mastery,
   });
 
+  factory JargonTerm.fromJson(Map<String, dynamic> json) {
+    return JargonTerm(
+      term: json['term'] as String,
+      definition: json['definition'] as String,
+      example: (json['example'] as String?) ?? '',
+      mastery: (json['mastery'] as int?) ?? 0,
+    );
+  }
+
   void adjustMastery(bool correct) {
     mastery = (mastery + (correct ? 10 : -10)).clamp(0, 100);
   }

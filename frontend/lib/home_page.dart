@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'data/dummy_data.dart';
+import 'data/dummy_quiz.dart';
 import 'quiz_page.dart';
 import 'theme.dart';
 import 'whispered_words_page.dart';
@@ -12,7 +13,9 @@ class HomePage extends StatefulWidget {
 }
 
 class FlashcardView extends StatefulWidget {
-  const FlashcardView({super.key});
+  const FlashcardView({super.key, this.jargon});
+
+  final List<JargonTerm>? jargon;
 
   @override
   State<FlashcardView> createState() => _FlashcardViewState();
@@ -21,6 +24,8 @@ class FlashcardView extends StatefulWidget {
 class _FlashcardViewState extends State<FlashcardView> {
   int _currentIndex = 0;
   bool _flipped = false;
+
+  List<JargonTerm> get _cards => widget.jargon ?? dummyJargon;
 
   void _goLeft() {
     if (_currentIndex > 0) {
@@ -32,7 +37,7 @@ class _FlashcardViewState extends State<FlashcardView> {
   }
 
   void _goRight() {
-    if (_currentIndex < dummyJargon.length - 1) {
+    if (_currentIndex < _cards.length - 1) {
       setState(() {
         _currentIndex++;
         _flipped = false;
@@ -42,7 +47,10 @@ class _FlashcardViewState extends State<FlashcardView> {
 
   @override
   Widget build(BuildContext context) {
-    final card = dummyJargon[_currentIndex];
+    if (_currentIndex >= _cards.length) {
+      _currentIndex = _cards.length - 1;
+    }
+    final card = _cards[_currentIndex];
     return GroveBackground(
       child: SingleChildScrollView(
         child: Padding(
@@ -88,7 +96,7 @@ class _FlashcardViewState extends State<FlashcardView> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text('${_currentIndex + 1} of ${dummyJargon.length}'),
+              Text('${_currentIndex + 1} of ${_cards.length}'),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -99,7 +107,7 @@ class _FlashcardViewState extends State<FlashcardView> {
             ),
             IconButton(
               icon: const Icon(Icons.arrow_forward),
-              onPressed: _currentIndex < dummyJargon.length - 1
+              onPressed: _currentIndex < _cards.length - 1
                   ? _goRight
                   : null,
             ),
@@ -121,7 +129,7 @@ class _FlashcardViewState extends State<FlashcardView> {
             DataColumn(label: Text('Growth'), numeric: true),
           ],
           rows: [
-            for (final jargon in dummyJargon)
+            for (final jargon in _cards)
               DataRow(cells: [
                 DataCell(Text(jargon.term)),
                 DataCell(Row(
@@ -149,6 +157,33 @@ class _FlashcardViewState extends State<FlashcardView> {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  Map<String, dynamic>? _analysisResult;
+
+  List<JargonTerm>? get _realJargon {
+    final list = _analysisResult?['jargon'];
+    if (list is List && list.isNotEmpty) {
+      return list
+          .whereType<Map>()
+          .map((e) => JargonTerm.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+    return null;
+  }
+
+  List<QuizQuestion>? get _realQuiz {
+    final list = _analysisResult?['quiz'];
+    if (list is List && list.isNotEmpty) {
+      return list
+          .whereType<Map>()
+          .map((e) => QuizQuestion.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+    return null;
+  }
+
+  void _onAnalysisResult(Map<String, dynamic> result) {
+    setState(() => _analysisResult = result);
+  }
 
   static const _items = [
     (icon: Icons.forest, label: 'Grove'),
@@ -224,9 +259,9 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: Center(
               child: switch (_selectedIndex) {
-                0 => const FlashcardView(),
-                1 => const QuizView(),
-                2 => const WhisperedWordsPage(),
+                0 => FlashcardView(jargon: _realJargon),
+                1 => QuizView(quiz: _realQuiz),
+                2 => WhisperedWordsPage(onResult: _onAnalysisResult),
                 _ => Text(
                   _items[_selectedIndex].label,
                   style: Theme.of(context).textTheme.headlineMedium,

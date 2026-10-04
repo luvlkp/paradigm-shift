@@ -4,7 +4,9 @@ import 'data/dummy_data.dart';
 import 'theme.dart';
 
 class QuizView extends StatefulWidget {
-  const QuizView({super.key});
+  const QuizView({super.key, this.quiz});
+
+  final List<QuizQuestion>? quiz;
 
   @override
   State<QuizView> createState() => _QuizViewState();
@@ -16,8 +18,10 @@ class _QuizViewState extends State<QuizView> {
   bool _submitted = false;
   int _score = 0;
 
-  QuizQuestion get _question => dummyQuiz[_currentIndex];
-  bool get _isLastQuestion => _currentIndex == dummyQuiz.length - 1;
+  List<QuizQuestion> get _questions => widget.quiz ?? dummyQuiz;
+
+  QuizQuestion get _question => _questions[_currentIndex];
+  bool get _isLastQuestion => _currentIndex == _questions.length - 1;
   bool get _isCorrect => _selectedIndex == _question.correctIndex;
 
   void _submit() {
@@ -51,6 +55,9 @@ class _QuizViewState extends State<QuizView> {
 
   @override
   Widget build(BuildContext context) {
+    if (_currentIndex >= _questions.length) {
+      _currentIndex = _questions.length - 1;
+    }
     return GroveBackground(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -65,14 +72,14 @@ class _QuizViewState extends State<QuizView> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Question ${_currentIndex + 1} of ${dummyQuiz.length}',
+            'Question ${_currentIndex + 1} of ${_questions.length}',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: (_currentIndex + (_submitted ? 1 : 0)) / dummyQuiz.length,
+              value: (_currentIndex + (_submitted ? 1 : 0)) / _questions.length,
               minHeight: 8,
               backgroundColor: GroveColors.sage.withValues(alpha: 0.3),
               valueColor: const AlwaysStoppedAnimation(GroveColors.forestGreen),
@@ -154,7 +161,7 @@ class _QuizViewState extends State<QuizView> {
             Column(
               children: [
                 Text(
-                  'Quest complete! You scored $_score out of ${dummyQuiz.length}.',
+                  'Quest complete! You scored $_score out of ${_questions.length}.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 16,
