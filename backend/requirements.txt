@@ -6,3 +6,5 @@ azure-functions
 pyodbc
 azure-cognitiveservices-speech
 google-genai
+python-multipart
+python-dotenv
