@@ -4,9 +4,14 @@ import 'data/dummy_data.dart';
 import 'theme.dart';
 
 class QuizView extends StatefulWidget {
-  const QuizView({super.key, this.quiz});
+  const QuizView({
+    super.key,
+    this.quiz,
+    this.onMasteryChanged,
+  });
 
   final List<QuizQuestion>? quiz;
+  final void Function(String term, bool correct)? onMasteryChanged;
 
   @override
   State<QuizView> createState() => _QuizViewState();
@@ -29,13 +34,13 @@ class _QuizViewState extends State<QuizView> {
     setState(() {
       _submitted = true;
       if (_isCorrect) _score++;
-      final jargon = dummyJargon.where((j) => j.term == _question.term);
-      for (final j in jargon) {
-        j.adjustMastery(_isCorrect);
-      }
     });
+    widget.onMasteryChanged?.call(
+      _question.term,
+      _isCorrect,
+    );
   }
-
+  
   void _next() {
     setState(() {
       _currentIndex++;

@@ -158,9 +158,10 @@ class _FlashcardViewState extends State<FlashcardView> {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   Map<String, dynamic>? _analysisResult;
+  List<JargonTerm>? _jargon;
 
-  List<JargonTerm>? get _realJargon {
-    final list = _analysisResult?['jargon'];
+  List<JargonTerm>? _parseJargon(Map<String, dynamic> result) {
+    final list = result['jargon'];
     if (list is List && list.isNotEmpty) {
       return list
           .whereType<Map>()
@@ -182,7 +183,21 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onAnalysisResult(Map<String, dynamic> result) {
-    setState(() => _analysisResult = result);
+    final jargon = _parseJargon(result);
+    setState(() {
+      _analysisResult = result;
+      _jargon = jargon;
+    });
+  }
+
+  void _onMasteryChanged(String term, bool correct) {
+    setState(() {
+      for (final jargon in _jargon ?? dummyJargon) {
+        if (jargon.term == term) {
+          jargon.adjustMastery(correct);
+        }
+      }
+    });
   }
 
   static const _items = [
@@ -259,8 +274,8 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: Center(
               child: switch (_selectedIndex) {
-                0 => FlashcardView(jargon: _realJargon),
-                1 => QuizView(quiz: _realQuiz),
+                0 => FlashcardView(jargon: _jargon),
+                1 => QuizView(quiz: _realQuiz,onMasteryChanged: _onMasteryChanged,),
                 2 => WhisperedWordsPage(onResult: _onAnalysisResult),
                 _ => Text(
                   _items[_selectedIndex].label,
