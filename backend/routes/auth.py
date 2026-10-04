@@ -8,7 +8,7 @@ from http_utils import error, json_response
 bp = func.Blueprint()
 
 @bp.route(route="auth/join", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
-def join(req: func.HttpRequest) -> func.HttpRequest:
+def join(req: func.HttpRequest) -> func.HttpResponse:
     try:
         body = req.get_json
     except ValueError:
