@@ -17,6 +17,7 @@ CREATE TABLE jargon (
     id INT IDENTITY(1,1) PRIMARY KEY,
     company_id INT NOT NULL REFERENCES companies(id),
     term NVARCHAR(200) NOT NULL,
+    term_normalized NVARCHAR(200) NOT NULL,
     meaning NVARCHAR(MAX) NOT NULL,
     example_sentence NVARCHAR(MAX) NULL,
     first_heard_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
