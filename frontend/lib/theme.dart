@@ -71,10 +71,77 @@ ThemeData groveTheme() {
   );
 }
 
+
+class FadingStar extends StatefulWidget {
+  const FadingStar({
+    super.key,
+    this.size = 10,
+    this.color = const Color(0xFF8066A8),
+    this.duration = const Duration(seconds: 3),
+  });
+
+  final double size;
+  final Color color;
+  final Duration duration;
+
+  @override
+  State<FadingStar> createState() => _FadingStarState();
+}
+
+class _FadingStarState extends State<FadingStar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final glow = Curves.easeInOut.transform(_controller.value);
+
+        return Container(
+          width: widget.size * 5,
+          height: widget.size * 5,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                widget.color.withValues(alpha: 0.12 + glow * 0.08),
+                widget.color.withValues(alpha: 0.05 + glow * 0.04),
+                widget.color.withValues(alpha: 0.0),
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// A soft, forest-inspired background: warm cream base, gentle gradient,
 /// a soft golden glow, and a few subtle sparkles/leaves.
 class GroveBackground extends StatelessWidget {
-  const GroveBackground({super.key, required this.child});
+  const GroveBackground({
+    super.key,
+    required this.child,
+  });
 
   final Widget child;
 
@@ -82,56 +149,164 @@ class GroveBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        // Warm enchanted parchment background
         Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFEFF3E4), GroveColors.cream],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFF3F4E6),
+                GroveColors.cream,
+                Color(0xFFEAE7F0),
+              ],
             ),
           ),
         ),
-        // Soft golden glow near the top, like light through the canopy.
+
+        // Soft golden moonlight
         Positioned(
-          top: -120,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Container(
-              width: 420,
-              height: 420,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    GroveColors.softGold.withValues(alpha: 0.35),
-                    GroveColors.softGold.withValues(alpha: 0.0),
-                  ],
-                ),
+          top: -140,
+          right: -80,
+          child: Container(
+            width: 420,
+            height: 420,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  GroveColors.softGold.withValues(alpha: 0.22),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
         ),
+
+        // Very subtle mystical purple glow
         Positioned(
-          top: 18,
-          left: 24,
-          child: Icon(Icons.eco, size: 20, color: GroveColors.moss.withValues(alpha: 0.35)),
+          bottom: -180,
+          left: -120,
+          child: Container(
+            width: 480,
+            height: 480,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  const Color(0xFF75689A).withValues(alpha: 0.10),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
         ),
+
+
+        // Small leaf
         Positioned(
-          top: 60,
-          right: 32,
-          child: Icon(Icons.auto_awesome, size: 16, color: GroveColors.gold.withValues(alpha: 0.5)),
+          top: 90,
+          right: 42,
+          child: Icon(
+            Icons.eco,
+            size: 18,
+            color: GroveColors.moss.withValues(alpha: 0.35),
+          ),
         ),
+
+        // Bottom leaf
         Positioned(
-          bottom: 24,
-          left: 48,
-          child: Icon(Icons.auto_awesome, size: 12, color: GroveColors.gold.withValues(alpha: 0.4)),
+          bottom: 25,
+          right: 45,
+          child: Icon(
+            Icons.eco,
+            size: 20,
+            color: GroveColors.sage.withValues(alpha: 0.45),
+          ),
         ),
-        Positioned(
-          bottom: 16,
-          right: 40,
-          child: Icon(Icons.eco, size: 18, color: GroveColors.sage.withValues(alpha: 0.5)),
+
+        // Fading purple stars
+        const Positioned(
+          top: 55,
+          left: 75,
+          child: FadingStar(
+            size: 7,
+            duration: Duration(seconds: 3),
+          ),
         ),
+
+        const Positioned(
+          top: 110,
+          right: 65,
+          child: FadingStar(
+            size: 6,
+            duration: Duration(seconds: 4),
+          ),
+        ),
+
+        const Positioned(
+          bottom: 75,
+          left: 55,
+          child: FadingStar(
+            size: 6,
+            duration: Duration(seconds: 5),
+          ),
+        ),
+
+        const Positioned(
+          bottom: 110,
+          right: 70,
+          child: FadingStar(
+            size: 7,
+            duration: Duration(seconds: 4),
+          ),
+        ),
+
+        const Positioned(
+          top: 180,
+          left: 180,
+          child: FadingStar(
+            size: 5,
+            duration: Duration(seconds: 5),
+          ),
+        ),
+
+        const Positioned(
+          top: 70,
+          left: 380,
+          child: FadingStar(
+            size: 7,
+            duration: Duration(seconds: 4),
+          ),
+        ),
+
+        const Positioned(
+          top: 30,
+          right: 280,
+          child: FadingStar(
+            size: 5,
+            duration: Duration(seconds: 6),
+          ),
+        ),
+
+        const Positioned(
+          top: 85,
+          right: 420,
+          child: FadingStar(
+            size: 6,
+            duration: Duration(seconds: 3),
+          ),
+        ),
+
+        const Positioned(
+          top: 245,
+          left: 500,
+          child: FadingStar(
+            size: 4,
+            duration: Duration(seconds: 7),
+          ),
+        ),
+        // Actual page
         child,
       ],
     );
